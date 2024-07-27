@@ -1,23 +1,21 @@
 import json
 import sys
-import bencodepy
-
-# import bencodepy - available if you need it!
+from bencodepy import Bencode
 # import requests - available if you need it!
-
-bc = bencodepy.Bencode(encoding="utf-8")
 # Examples:
 #
 # - decode_bencode(b"5:hello") -> b"hello"
 # - decode_bencode(b"10:hello12345") -> b"hello12345"
 def decode_bencode(bencoded_value):
-    # return bencodepy.decode(bencoded_value)
-    return bc.decode(bencoded_value)
     if chr(bencoded_value[0]).isdigit():
         length = int(bencoded_value.split(b":")[0])
         return bencoded_value.split(b":")[1][:length]
-    elif bencoded_value.startswith(b"i"):  # i.e. b'i52e'
+    elif chr(bencoded_value[0]) == "i" and chr(bencoded_value[-1]) == "e":
         return int(bencoded_value[1:-1])
+    elif chr(bencoded_value[0]) == "l" and chr(bencoded_value[-1]) == "e":
+        return Bencode("utf-8").decode(bencoded_value)
+    elif chr(bencoded_value[0]) == "d" and chr(bencoded_value[-1]) == "e":
+        return Bencode("utf-8").decode(bencoded_value)
     else:
         raise NotImplementedError("Only strings are supported at the moment")
 def main():
@@ -40,3 +38,4 @@ def main():
         raise NotImplementedError(f"Unknown command {command}")
 if __name__ == "__main__":
     main()
+
