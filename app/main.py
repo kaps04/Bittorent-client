@@ -41,7 +41,7 @@ def main():
       print(json.dumps(decode_bencode(bencoded_value), default=bytes_to_str))
     else:
         raise NotImplementedError(f"Unknown command {command}")
-
+    exit(0)
 
 if __name__ == "__main__":
     main()
