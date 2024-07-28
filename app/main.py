@@ -1,40 +1,29 @@
-import hashlib
 import json
-import math
 import sys
+from bencodepy import Bencode  # - available if you need it!
+import hashlib
+import textwrap
+import requests  # - available if you need it!
 import socket
-import bencodepy
-import requests
-Expand 136 lines
-            raw_peers = decoded_response[b"peers"]
-            peers = [parse_ip(i, raw_peers) for i in range(len(raw_peers) // 6)]
-            print("\n".join(peers))
+# Examples:
+#
+Expand 88 lines
+            peers_list = peers_list[6:]
     elif command == "handshake":
-        file_name = sys.argv[2]
-        (ip, port) = sys.argv[3].split(":")
-        with open(file_name, "rb") as file:
-            parsed = decode_bencode(file.read())
-            info = parsed[b"info"]
-            bencoded_info = bencodepy.encode(info)
-            info_hash = hashlib.sha1(bencoded_info).digest()
-            handshake = (
-                b"\x13BitTorrent protocol\x00\x00\x00\x00\x00\x00\x00\x00"
+        content_decoded = metafile(sys.argv[2])
+        info_hash = hashlib.sha1(Bencode().encode(content_decoded[b"info"])).digest()
+        addr = sys.argv[3].split(":")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+            client.connect((addr[0], int(addr[1])))
+            client.send(
+                chr(19).encode()
+                + b"BitTorrent protocol00000000"
                 + info_hash
-                + b"00112233445566778899"
+                + "40440440440404404040".encode()
             )
-            # make request to peer
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((ip, int(port)))
-                s.send(handshake)
-                print(f"Peer ID: {s.recv(68)[48:].hex()}")
+            reply = client.recv(70)
+        print("Peer ID:", reply[48:].hex())
     else:
         raise NotImplementedError(f"Unknown command {command}")
-def parse_ip(i, raw_peers):
-    peer = raw_peers[i * 6 : 6 * i + 6]
-    ip = ".".join([str(ba) for ba in bytearray(peer[0:4])])
-    port = int.from_bytes(peer[4:])
-    return f"{ip}:{port}"
 if __name__ == "__main__":
     main()
-
-
